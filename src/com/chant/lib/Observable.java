@@ -32,6 +32,61 @@ public class Observable<T> {
         return Observable.create(new OnSubscribeLift<>(this, operator));
     }
 
+    public Observable<T> subscribeOn(Scheduler scheduler) {
+        return Observable.create(new OnSubscribe<T>() {
+            @Override
+            public void call(Observer<T> observer) {
+                scheduler.createWorker().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        mOnSubscribe.call(observer);
+                    }
+                });
+            }
+        });
+    }
+
+    public Observable<T> observeOn(Scheduler scheduler) {
+        return Observable.create(new OnSubscribe<T>() {
+            @Override
+            public void call(Observer<T> observer) {
+
+                mOnSubscribe.call(new Observer<T>() {
+                    private Scheduler.Worker worker = scheduler.createWorker();
+                    @Override
+                    public void onNext(T t) {
+                        worker.schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                observer.onNext(t);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        worker.schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                observer.onError(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        worker.schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                observer.onCompleted();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
     public static <T> Observable<T> create(OnSubscribe<T> onSubscribe) {
         return new Observable<>(onSubscribe);
     }

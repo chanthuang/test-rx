@@ -3,6 +3,7 @@ package com.chant.main;
 import com.chant.lib.Observable;
 import com.chant.lib.Observer;
 import com.chant.lib.Operator;
+import com.chant.lib.Schedulers;
 import com.sun.javafx.tools.packager.Log;
 
 import java.util.function.Function;
@@ -11,8 +12,9 @@ public class Main {
 
     public static void main(String[] args) {
         Log.setLogger(null);
-        test();
-        testLift();
+//        test();
+//        testLift();
+        testThread();
     }
 
     private static void test() {
@@ -133,4 +135,40 @@ public class Main {
 
     }
 
+    private static void testThread() {
+        Observable.fromCallable(() -> {
+            Log.info("callable: thread=" + Thread.currentThread().getName());
+            return 1;
+        })
+                .subscribeOn(Schedulers.io())
+                .map((i -> {
+                    Log.info("map: thread=" + Thread.currentThread().getName());
+                    return i * 10;
+                }))
+                .map(new Function<Integer, String>() {
+                    @Override
+                    public String apply(Integer integer) {
+                        return String.valueOf(integer);
+                    }
+                })
+                .observeOn(Schedulers.main())
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onNext(String s) {
+                        Log.info("onNext: " + s + ", thread=" + Thread.currentThread().getName());
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.info("onError: " + e.getMessage());
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        Log.info("onCompleted");
+                    }
+                });
+
+
+    }
 }
