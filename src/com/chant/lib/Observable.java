@@ -1,5 +1,6 @@
 package com.chant.lib;
 
+
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -20,11 +21,15 @@ public class Observable<T> {
     }
 
     public <R> Observable<R> map(Function<T, R> func) {
-        return new Observable<>(new OnSubscribeMap<>(this, func));
+        return Observable.create(new OnSubscribeMap<>(this, func));
     }
 
     public Observable<T> filter(Predicate<T> predicate) {
-        return new Observable<>(new OnSubscribeFilter<>(this, predicate));
+        return Observable.create(new OnSubscribeFilter<>(this, predicate));
+    }
+
+    public <R> Observable<R> lift(Operator<R, T> operator) {
+        return Observable.create(new OnSubscribeLift<>(this, operator));
     }
 
     public static <T> Observable<T> create(OnSubscribe<T> onSubscribe) {

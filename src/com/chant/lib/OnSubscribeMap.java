@@ -6,7 +6,6 @@ public class OnSubscribeMap<T, R> implements OnSubscribe<R> {
 
     private Observable<T> mSource;
     private Function<T, R> mFunc;
-    private boolean done = false;
 
     public OnSubscribeMap(Observable<T> source, Function<T, R> func) {
         mSource = source;

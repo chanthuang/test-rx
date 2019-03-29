@@ -6,7 +6,6 @@ public class OnSubscribeFilter<T> implements OnSubscribe<T> {
 
     private Observable<T> mSource;
     private Predicate<T> mPredicate;
-    private boolean done = false;
 
     public OnSubscribeFilter(Observable<T> source, Predicate<T> predicate) {
         mSource = source;

@@ -2,33 +2,33 @@ package com.chant.main;
 
 import com.chant.lib.Observable;
 import com.chant.lib.Observer;
+import com.chant.lib.Operator;
 import com.sun.javafx.tools.packager.Log;
+
+import java.util.function.Function;
 
 public class Main {
 
     public static void main(String[] args) {
         Log.setLogger(null);
-        Observer<Integer> integerObserver = new Observer<Integer>() {
-            @Override
-            public void onNext(Integer i) {
-            }
+        test();
+        testLift();
+    }
 
-            @Override
-            public void onError(Throwable e) {
-            }
-
-            @Override
-            public void onCompleted() {
-            }
-        };
-
+    private static void test() {
         Observable.from(new Integer[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
                 .filter((i -> i % 2 == 0))
                 .map((i -> i * 10))
-                .subscribe(new Observer<Integer>() {
+                .map(new Function<Integer, String>() {
                     @Override
-                    public void onNext(Integer i) {
-                        Log.info("onNext: " + i);
+                    public String apply(Integer integer) {
+                        return String.valueOf(integer);
+                    }
+                })
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onNext(String s) {
+                        Log.info("onNext: " + s);
                     }
 
                     @Override
@@ -42,4 +42,95 @@ public class Main {
                     }
                 });
     }
+
+    private static void testLift() {
+        Operator<Integer, Integer> filterEven = new Operator<Integer, Integer>() {
+            @Override
+            public Observer<Integer> apply(Observer<Integer> integerObserver) {
+                return new Observer<Integer>() {
+                    @Override
+                    public void onNext(Integer integer) {
+                        if (integer % 2 == 0) {
+                            integerObserver.onNext(integer);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        integerObserver.onError(e);
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        integerObserver.onCompleted();
+                    }
+                };
+            }
+        };
+        Operator<Integer, Integer> mapMultiplay = new Operator<Integer, Integer>() {
+            @Override
+            public Observer<Integer> apply(Observer<Integer> integerObserver) {
+                return new Observer<Integer>() {
+                    @Override
+                    public void onNext(Integer integer) {
+                        integerObserver.onNext(integer * 10);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        integerObserver.onError(e);
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        integerObserver.onCompleted();
+                    }
+                };
+            }
+        };
+        Operator<String, Integer> intToString = new Operator<String, Integer>() {
+            @Override
+            public Observer<Integer> apply(Observer<String> stringObserver) {
+                return new Observer<Integer>() {
+                    @Override
+                    public void onNext(Integer integer) {
+                        stringObserver.onNext(String.valueOf(integer));
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        stringObserver.onError(e);
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        stringObserver.onCompleted();
+                    }
+                };
+            }
+        };
+
+        Observable.from(new Integer[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+                .lift(filterEven)
+                .lift(mapMultiplay)
+                .lift(intToString)
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onNext(String s) {
+                        Log.info("onNext: " + s);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.info("onError: " + e.getMessage());
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        Log.info("onCompleted");
+                    }
+                });
+
+    }
+
 }
