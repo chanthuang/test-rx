@@ -25,7 +25,8 @@ public class Main {
             }
         };
 
-        Observable.fromCallable(() -> "hello world").subscribe(stringObserver);
-
+        Observable.from(new String[]{"a", "b", "c"})
+                .map((s) -> "map: " + s)
+                .subscribe(stringObserver);
     }
 }
