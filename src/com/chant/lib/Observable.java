@@ -2,6 +2,7 @@ package com.chant.lib;
 
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * 被观察者
@@ -19,7 +20,11 @@ public class Observable<T> {
     }
 
     public <R> Observable<R> map(Function<T, R> func) {
-        return new Observable<R>(new OnSubscribeMap<>(this, func));
+        return new Observable<>(new OnSubscribeMap<>(this, func));
+    }
+
+    public Observable<T> filter(Predicate<T> predicate) {
+        return new Observable<>(new OnSubscribeFilter<>(this, predicate));
     }
 
     public static <T> Observable<T> create(OnSubscribe<T> onSubscribe) {

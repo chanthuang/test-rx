@@ -15,32 +15,44 @@ public class OnSubscribeMap<T, R> implements OnSubscribe<R> {
 
     @Override
     public void call(Observer<R> observer) {
-        Observer<T> observer1 = new Observer<T>() {
-            @Override
-            public void onNext(T t) {
-                if (done) return;
-                try {
-                    R r = mFunc.apply(t);
-                    observer.onNext(r);
-                } catch (Exception e) {
-                    observer.onError(e);
-                    done = true;
-                }
-            }
+        ObserverMap<T, R> observerMap = new ObserverMap<>(observer, mFunc);
+        mSource.subscribe(observerMap);
+    }
 
-            @Override
-            public void onError(Throwable e) {
-                observer.onError(e);
-            }
+    static class ObserverMap<T, R> implements Observer<T> {
 
-            @Override
-            public void onCompleted() {
-                if (!done) {
-                    observer.onCompleted();
-                }
+        private boolean done = false;
+        private Observer<R> mActual;
+        private Function<T, R> mFunc;
+
+        public ObserverMap(Observer<R> actual, Function<T, R> mFunc) {
+            mActual = actual;
+            this.mFunc = mFunc;
+        }
+
+        @Override
+        public void onNext(T t) {
+            if (done) return;
+            try {
+                R r = mFunc.apply(t);
+                mActual.onNext(r);
+            } catch (Exception e) {
+                mActual.onError(e);
+                done = true;
             }
-        };
-        mSource.subscribe(observer1);
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            mActual.onError(e);
+        }
+
+        @Override
+        public void onCompleted() {
+            if (!done) {
+                mActual.onCompleted();
+            }
+        }
     }
 }
 
